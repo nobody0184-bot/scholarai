@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 
 export async function GET() {
-  const authToken = process.env.DATABASE_AUTH_TOKEN
-  const databaseUrl = process.env.DATABASE_URL
+  const authToken = process.env.DATABASE_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN
+  const databaseUrl = process.env.DATABASE_URL || process.env.TURSO_DATABASE_URL
 
   return NextResponse.json({
     hasAuthToken: !!authToken,
