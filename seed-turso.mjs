@@ -1,25 +1,12 @@
 import { createClient } from '@libsql/client';
 
-const TURSO_URL = process.env.DATABASE_URL;
-const TURSO_AUTH_TOKEN = process.env.DATABASE_AUTH_TOKEN;
-
-if (!TURSO_URL || !TURSO_AUTH_TOKEN) {
-  console.error('❌ DATABASE_URL and DATABASE_AUTH_TOKEN env vars required');
-  process.exit(1);
-}
-
-const client = createClient({
-  url: TURSO_URL,
-  authToken: TURSO_AUTH_TOKEN,
-});
-
 // ============================================================
 // ScholarAI - Comprehensive Scholarship Database
 // Wet Process Engineering + All Textile Subjects
 // World Universities Accepting International Students
 // ============================================================
 
-const scholarships = [
+export const scholarships = [
   // =========================================================
   // WET PROCESS ENGINEERING SUBJECTS
   // =========================================================
@@ -2273,7 +2260,7 @@ const scholarships = [
 
 ];
 
-async function seed() {
+export async function seedDatabase(client) {
   console.log('🚀 ScholarAI - Seeding Turso Database...');
   console.log(`📊 Total scholarships to insert: ${scholarships.length}`);
 
@@ -2393,10 +2380,25 @@ async function seed() {
   console.log(`🌍 Non-textile scholarships: ${result.rows[0].count - textileCount.rows[0].count}`);
   console.log('='.repeat(50));
 
-  client.close();
 }
 
-seed().catch((e) => {
-  console.error('❌ Seeding failed:', e);
-  process.exit(1);
-});
+async function seedFromEnvironment() {
+  const url = process.env.DATABASE_URL || process.env.TURSO_DATABASE_URL;
+  const authToken = process.env.DATABASE_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
+
+  if (!url) throw new Error('DATABASE_URL or TURSO_DATABASE_URL is required');
+
+  const client = createClient(authToken ? { url, authToken } : { url });
+  try {
+    await seedDatabase(client);
+  } finally {
+    client.close();
+  }
+}
+
+if (process.argv[1]?.endsWith('seed-turso.mjs')) {
+  seedFromEnvironment().catch((e) => {
+    console.error('❌ Seeding failed:', e);
+    process.exit(1);
+  });
+}

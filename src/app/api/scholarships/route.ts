@@ -15,6 +15,17 @@ export async function GET(request: Request) {
 
     const client = getDatabaseClient()
 
+    // A newly provisioned Turso integration starts with an empty database.
+    // Bootstrap the schema and bundled seed data on the first request.
+    try {
+      await client.execute('SELECT 1 FROM Scholarship LIMIT 1')
+    } catch (error) {
+      if (!String(error).includes('no such table')) throw error
+      // @ts-ignore The seed module is JavaScript and intentionally shared with the CLI seeder.
+      const { seedDatabase } = await import('../../../../seed-turso.mjs')
+      await seedDatabase(client)
+    }
+
     // Build WHERE clause
     const conditions: string[] = []
     const args: Record<string, string> = {}
